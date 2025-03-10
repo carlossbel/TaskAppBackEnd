@@ -54,39 +54,6 @@ const authenticate = (req, res, next) => {
   }
 };
 
-// Función para crear un administrador inicial
-const createAdminUser = async () => {
-  try {
-    // Verificar si ya existe un admin
-    const adminQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
-    const adminSnapshot = await getDocs(adminQuery);
-    
-    if (!adminSnapshot.empty) {
-      console.log('El usuario administrador ya existe');
-      return;
-    }
-
-    const hashedPassword = await bcrypt.hash('adminpass', 10);
-    
-    const adminData = {
-      email: 'admin@gmail.com',
-      username: '123456',
-      password: hashedPassword,
-      role: 'admin',
-      createdAt: serverTimestamp()
-    };
-
-    await addDoc(collection(db, 'users'), adminData);
-    console.log('Usuario administrador creado con éxito');
-    console.log('Email: admin@gmail.com, Password: adminpass');
-  } catch (error) {
-    console.error('Error al crear usuario administrador:', error);
-  }
-};
-
-// Crear un administrador al iniciar el servidor
-createAdminUser();
-
 app.get('/', (req, res) => {
   res.send('API de Task Manager');
 }); 
