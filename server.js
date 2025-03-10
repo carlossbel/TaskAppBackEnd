@@ -7,7 +7,7 @@ const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc, deleteDoc, serverTimestamp, arrayRemove, writeBatch } = require('firebase/firestore');
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key'; // Definir la clave secreta que faltaba
 
 // Firebase setup
