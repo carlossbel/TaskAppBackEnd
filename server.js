@@ -1354,12 +1354,9 @@ app.delete('/api/groups/:groupId', authenticate, async (req, res) => {
   }
 });
 
-// Para desarrollo local, puedes mantenerla así:
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-  });
-}
+// Iniciar el servidor en cualquier entorno
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
-// Agrega esto al final de tu archivo
 module.exports = app;
