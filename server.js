@@ -240,7 +240,7 @@ app.post('/api/users/admin', authenticate, async (req, res) => {
       createdAt: serverTimestamp()
     };
 
-    await addDoc(collection(db, 'users'), newUser);
+    await addDoc(collection (db, 'users'), newUser);
 
     res.status(201).json({ message: 'Usuario creado con éxito.' });
   } catch (error) {
@@ -607,24 +607,18 @@ app.get('/api/tasks/:userId', authenticate, async (req, res) => {
     let userMap = {};
     if (userIds.size > 0) {
       const userIdsArray = Array.from(userIds);
-      // Firestore no permite consultas 'in' con más de 10 elementos, así que dividimos en chunks si es necesario
-      const chunkSize = 10;
-      for (let i = 0; i < userIdsArray.length; i += chunkSize) {
-        const chunk = userIdsArray.slice(i, i + chunkSize);
-        const usersQuery = query(
-          collection(db, 'users'), 
-          where(doc.id, 'in', chunk)
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-        
-        usersSnapshot.forEach(docUser => {
-          const userData = docUser.data();
-          userMap[docUser.id] = {
-            _id: docUser.id,
+      
+      // Obtener cada usuario individualmente
+      for (const userId of userIdsArray) {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          userMap[userId] = {
+            _id: userId,
             username: userData.username,
             email: userData.email
           };
-        });
+        }
       }
     }
     
@@ -683,24 +677,18 @@ app.get('/api/tasks', authenticate, async (req, res) => {
     let userMap = {};
     if (userIds.size > 0) {
       const userIdsArray = Array.from(userIds);
-      // Dividir en chunks para respetar límite de Firestore
-      const chunkSize = 10;
-      for (let i = 0; i < userIdsArray.length; i += chunkSize) {
-        const chunk = userIdsArray.slice(i, i + chunkSize);
-        const usersQuery = query(
-          collection(db, 'users'), 
-          where(doc.id, 'in', chunk)
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-        
-        usersSnapshot.forEach(docUser => {
-          const userData = docUser.data();
-          userMap[docUser.id] = {
-            _id: docUser.id,
+      
+      // Obtener cada usuario individualmente
+      for (const userId of userIdsArray) {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          userMap[userId] = {
+            _id: userId,
             username: userData.username,
             email: userData.email
           };
-        });
+        }
       }
     }
     
@@ -708,23 +696,17 @@ app.get('/api/tasks', authenticate, async (req, res) => {
     let groupMap = {};
     if (groupIds.size > 0) {
       const groupIdsArray = Array.from(groupIds);
-      // Dividir en chunks para respetar límite de Firestore
-      const chunkSize = 10;
-      for (let i = 0; i < groupIdsArray.length; i += chunkSize) {
-        const chunk = groupIdsArray.slice(i, i + chunkSize);
-        const groupsQuery = query(
-          collection(db, 'groups'), 
-          where(doc.id, 'in', chunk)
-        );
-        const groupsSnapshot = await getDocs(groupsQuery);
-        
-        groupsSnapshot.forEach(docGroup => {
-          const groupData = docGroup.data();
-          groupMap[docGroup.id] = {
-            _id: docGroup.id,
+      
+      // Obtener cada grupo individualmente
+      for (const groupId of groupIdsArray) {
+        const groupDoc = await getDoc(doc(db, 'groups', groupId));
+        if (groupDoc.exists()) {
+          const groupData = groupDoc.data();
+          groupMap[groupId] = {
+            _id: groupId,
             name: groupData.name
           };
-        });
+        }
       }
     }
     
@@ -1050,313 +1032,313 @@ app.get('/api/groups', authenticate, async (req, res) => {
     });
     
     // Obtener información de usuarios
-    let userMap = {};
-    if (userIds.size > 0) {
-      const userIdsArray = Array.from(userIds);
-      // Dividir en chunks para respetar límite de Firestore
-      const chunkSize = 10;
-      for (let i = 0; i < userIdsArray.length; i += chunkSize) {
-        const chunk = userIdsArray.slice(i, i + chunkSize);
-        for (const userId of chunk) {
-          const userDoc = await getDoc(doc(db, 'users', userId));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            userMap[userDoc.id] = {
-              _id: userDoc.id,
-              username: userData.username,
-              email: userData.email
-            };
+        let userMap = {};
+        if (userIds.size > 0) {
+          const userIdsArray = Array.from(userIds);
+          // Dividir en chunks para respetar límite de Firestore
+          const chunkSize = 10;
+          for (let i = 0; i < userIdsArray.length; i += chunkSize) {
+            const chunk = userIdsArray.slice(i, i + chunkSize);
+            for (const userId of chunk) {
+              const userDoc = await getDoc(doc(db, 'users', userId));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                userMap[userDoc.id] = {
+                  _id: userDoc.id,
+                  username: userData.username,
+                  email: userData.email
+                };
+              }
+            }
           }
         }
-      }
-    }
-    
-    // Reemplazar IDs con datos completos
-    groups.forEach(group => {
-      // Reemplazar ownerId con datos de usuario
-      if (group.ownerId && userMap[group.ownerId]) {
-        group.ownerId = userMap[group.ownerId];
-      }
-      
-      // Reemplazar user con datos de usuarios
-      if (group.user && Array.isArray(group.user)) {
-        group.user = group.user.map(userId => userMap[userId] || userId);
+        
+        // Reemplazar IDs con datos completos
+        groups.forEach(group => {
+          // Reemplazar ownerId con datos de usuario
+          if (group.ownerId && userMap[group.ownerId]) {
+            group.ownerId = userMap[group.ownerId];
+          }
+          
+          // Reemplazar user con datos de usuarios
+          if (group.user && Array.isArray(group.user)) {
+            group.user = group.user.map(userId => userMap[userId] || userId);
+          }
+        });
+        
+        res.status(200).json(groups);
+      } catch (error) {
+        console.error("Error al obtener todos los grupos:", error);
+        res.status(500).json({ message: 'Error al obtener todos los grupos.', error: error.message });
       }
     });
     
-    res.status(200).json(groups);
-  } catch (error) {
-    console.error("Error al obtener todos los grupos:", error);
-    res.status(500).json({ message: 'Error al obtener todos los grupos.', error: error.message });
-  }
-});
-
-// Actualizar grupo
-app.put('/api/groups/:groupId', authenticate, async (req, res) => {
-  try {
-    // Verificar que el grupo existe
-    const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    
-    if (!groupDoc.exists()) {
-      return res.status(404).json({ message: 'Grupo no encontrado.' });
-    }
-    
-    const groupData = groupDoc.data();
-    
-    // Verificar permisos
-    const isOwner = groupData.ownerId === req.userId;
-    
-    // Verificar si es admin
-    const userDoc = await getDoc(doc(db, 'users', req.userId));
-    const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-    
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'No tienes permiso para actualizar este grupo.' });
-    }
-    
-    const { name, user } = req.body;
-    const updateData = {};
-    
-    if (name) updateData.name = name;
-    if (user && Array.isArray(user)) updateData.user = user;
-    
-    // Actualizar el grupo
-    await updateDoc(doc(db, 'groups', req.params.groupId), updateData);
-    
-    // Obtener el grupo actualizado
-    const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    const updatedGroupData = updatedGroupDoc.data();
-    
-    // Obtener información de usuarios del grupo
-    let usersInfo = [];
-    if (updatedGroupData.user && updatedGroupData.user.length > 0) {
-      for (const userId of updatedGroupData.user) {
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          usersInfo.push({
-            _id: userDoc.id,
-            username: userData.username,
-            email: userData.email
-          });
+    // Actualizar grupo
+    app.put('/api/groups/:groupId', authenticate, async (req, res) => {
+      try {
+        // Verificar que el grupo existe
+        const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        
+        if (!groupDoc.exists()) {
+          return res.status(404).json({ message: 'Grupo no encontrado.' });
         }
-      }
-    }
-    
-    res.status(200).json({
-      message: 'Grupo actualizado con éxito.',
-      group: {
-        _id: req.params.groupId,
-        ...updatedGroupData,
-        createdAt: updatedGroupData.createdAt?.toDate() || null,
-        user: usersInfo
-      }
-    });
-  } catch (error) {
-    console.error("Error al actualizar grupo:", error);
-    res.status(500).json({ message: 'Error al actualizar el grupo.', error: error.message });
-  }
-});
-
-// Agregar usuario a un grupo
-app.post('/api/groups/:groupId/users', authenticate, async (req, res) => {
-  try {
-    const { userId } = req.body;
-    
-    if (!userId) {
-      return res.status(400).json({ message: 'El ID de usuario es requerido.' });
-    }
-    
-    // Verificar que el grupo existe
-    const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    
-    if (!groupDoc.exists()) {
-      return res.status(404).json({ message: 'Grupo no encontrado.' });
-    }
-    
-    const groupData = groupDoc.data();
-    
-    // Verificar permisos
-    const isOwner = groupData.ownerId === req.userId;
-    
-    // Verificar si es admin
-    const userDoc = await getDoc(doc(db, 'users', req.userId));
-    const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-    
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'No tienes permiso para agregar usuarios a este grupo.' });
-    }
-    
-    // Verificar si el usuario ya está en el grupo
-    if (groupData.user && groupData.user.includes(userId)) {
-      return res.status(400).json({ message: 'El usuario ya está en el grupo.' });
-    }
-    
-    // Añadir el usuario al grupo
-    const updatedUsers = groupData.user || [];
-    updatedUsers.push(userId);
-    
-    await updateDoc(doc(db, 'groups', req.params.groupId), { 
-      user: updatedUsers
-    });
-    
-    // Obtener el grupo actualizado
-    const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    const updatedGroupData = updatedGroupDoc.data();
-    
-    // Obtener información de usuarios del grupo
-    let usersInfo = [];
-    if (updatedGroupData.user && updatedGroupData.user.length > 0) {
-      for (const userId of updatedGroupData.user) {
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          usersInfo.push({
-            _id: userDoc.id,
-            username: userData.username,
-            email: userData.email
-          });
+        
+        const groupData = groupDoc.data();
+        
+        // Verificar permisos
+        const isOwner = groupData.ownerId === req.userId;
+        
+        // Verificar si es admin
+        const userDoc = await getDoc(doc(db, 'users', req.userId));
+        const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
+        
+        if (!isOwner && !isAdmin) {
+          return res.status(403).json({ message: 'No tienes permiso para actualizar este grupo.' });
         }
-      }
-    }
-    
-    res.status(200).json({
-      message: 'Usuario agregado al grupo con éxito.',
-      group: {
-        _id: req.params.groupId,
-        ...updatedGroupData,
-        createdAt: updatedGroupData.createdAt?.toDate() || null,
-        user: usersInfo
-      }
-    });
-  } catch (error) {
-    console.error("Error al agregar usuario al grupo:", error);
-    res.status(500).json({ message: 'Error al agregar usuario al grupo.', error: error.message });
-  }
-});
-
-// Eliminar usuario de un grupo
-app.delete('/api/groups/:groupId/users/:userId', authenticate, async (req, res) => {
-  try {
-    // Verificar que el grupo existe
-    const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    
-    if (!groupDoc.exists()) {
-      return res.status(404).json({ message: 'Grupo no encontrado.' });
-    }
-    
-    const groupData = groupDoc.data();
-    
-    // Verificar permisos
-    const isOwner = groupData.ownerId === req.userId;
-    
-    // Verificar si es admin
-    const userDoc = await getDoc(doc(db, 'users', req.userId));
-    const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-    
-    // El propio usuario puede salir del grupo
-    const isSelfRemoval = req.params.userId === req.userId;
-    
-    if (!isOwner && !isAdmin && !isSelfRemoval) {
-      return res.status(403).json({ message: 'No tienes permiso para eliminar usuarios de este grupo.' });
-    }
-    
-    // Verificar si el usuario está en el grupo
-    if (!groupData.user || !groupData.user.includes(req.params.userId)) {
-      return res.status(400).json({ message: 'El usuario no está en el grupo.' });
-    }
-    
-    // Eliminar el usuario del grupo
-    const updatedUsers = groupData.user.filter(id => id !== req.params.userId);
-    
-    await updateDoc(doc(db, 'groups', req.params.groupId), { 
-      user: updatedUsers
-    });
-    
-    // Obtener el grupo actualizado
-    const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
-    const updatedGroupData = updatedGroupDoc.data();
-    
-    // Obtener información de usuarios del grupo
-    let usersInfo = [];
-    if (updatedGroupData.user && updatedGroupData.user.length > 0) {
-      for (const userId of updatedGroupData.user) {
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          usersInfo.push({
-            _id: userDoc.id,
-            username: userData.username,
-            email: userData.email
-          });
+        
+        const { name, user } = req.body;
+        const updateData = {};
+        
+        if (name) updateData.name = name;
+        if (user && Array.isArray(user)) updateData.user = user;
+        
+        // Actualizar el grupo
+        await updateDoc(doc(db, 'groups', req.params.groupId), updateData);
+        
+        // Obtener el grupo actualizado
+        const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        const updatedGroupData = updatedGroupDoc.data();
+        
+        // Obtener información de usuarios del grupo
+        let usersInfo = [];
+        if (updatedGroupData.user && updatedGroupData.user.length > 0) {
+          for (const userId of updatedGroupData.user) {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              usersInfo.push({
+                _id: userDoc.id,
+                username: userData.username,
+                email: userData.email
+              });
+            }
+          }
         }
-      }
-    }
-    
-    res.status(200).json({
-      message: 'Usuario eliminado del grupo con éxito.',
-      group: {
-        _id: req.params.groupId,
-        ...updatedGroupData,
-        createdAt: updatedGroupData.createdAt?.toDate() || null,
-        user: usersInfo
+        
+        res.status(200).json({
+          message: 'Grupo actualizado con éxito.',
+          group: {
+            _id: req.params.groupId,
+            ...updatedGroupData,
+            createdAt: updatedGroupData.createdAt?.toDate() || null,
+            user: usersInfo
+          }
+        });
+      } catch (error) {
+        console.error("Error al actualizar grupo:", error);
+        res.status(500).json({ message: 'Error al actualizar el grupo.', error: error.message });
       }
     });
-  } catch (error) {
-    console.error("Error al eliminar usuario del grupo:", error);
-    res.status(500).json({ message: 'Error al eliminar usuario del grupo.', error: error.message });
-  }
-});
-
-// Eliminar grupo
-app.delete('/api/groups/:groupId', authenticate, async (req, res) => {
-  try {
-    // Verificar que el grupo existe
-    const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
     
-    if (!groupDoc.exists()) {
-      return res.status(404).json({ message: 'Grupo no encontrado.' });
-    }
-    
-    const groupData = groupDoc.data();
-    
-    // Verificar permisos
-    const isOwner = groupData.ownerId === req.userId;
-    
-    // Verificar si es admin
-    const userDoc = await getDoc(doc(db, 'users', req.userId));
-    const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-    
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'No tienes permiso para eliminar este grupo.' });
-    }
-    
-    // Eliminar todas las tareas asociadas al grupo
-    const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', req.params.groupId));
-    const tasksSnapshot = await getDocs(tasksQuery);
-    
-    const batch = writeBatch(db);
-    
-    tasksSnapshot.forEach(docTask => {
-      batch.delete(doc(db, 'tasks', docTask.id));
+    // Agregar usuario a un grupo
+    app.post('/api/groups/:groupId/users', authenticate, async (req, res) => {
+      try {
+        const { userId } = req.body;
+        
+        if (!userId) {
+          return res.status(400).json({ message: 'El ID de usuario es requerido.' });
+        }
+        
+        // Verificar que el grupo existe
+        const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        
+        if (!groupDoc.exists()) {
+          return res.status(404).json({ message: 'Grupo no encontrado.' });
+        }
+        
+        const groupData = groupDoc.data();
+        
+        // Verificar permisos
+        const isOwner = groupData.ownerId === req.userId;
+        
+        // Verificar si es admin
+        const userDoc = await getDoc(doc(db, 'users', req.userId));
+        const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
+        
+        if (!isOwner && !isAdmin) {
+          return res.status(403).json({ message: 'No tienes permiso para agregar usuarios a este grupo.' });
+        }
+        
+        // Verificar si el usuario ya está en el grupo
+        if (groupData.user && groupData.user.includes(userId)) {
+          return res.status(400).json({ message: 'El usuario ya está en el grupo.' });
+        }
+        
+        // Añadir el usuario al grupo
+        const updatedUsers = groupData.user || [];
+        updatedUsers.push(userId);
+        
+        await updateDoc(doc(db, 'groups', req.params.groupId), { 
+          user: updatedUsers
+        });
+        
+        // Obtener el grupo actualizado
+        const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        const updatedGroupData = updatedGroupDoc.data();
+        
+        // Obtener información de usuarios del grupo
+        let usersInfo = [];
+        if (updatedGroupData.user && updatedGroupData.user.length > 0) {
+          for (const userId of updatedGroupData.user) {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              usersInfo.push({
+                _id: userDoc.id,
+                username: userData.username,
+                email: userData.email
+              });
+            }
+          }
+        }
+        
+        res.status(200).json({
+          message: 'Usuario agregado al grupo con éxito.',
+          group: {
+            _id: req.params.groupId,
+            ...updatedGroupData,
+            createdAt: updatedGroupData.createdAt?.toDate() || null,
+            user: usersInfo
+          }
+        });
+      } catch (error) {
+        console.error("Error al agregar usuario al grupo:", error);
+        res.status(500).json({ message: 'Error al agregar usuario al grupo.', error: error.message });
+      }
     });
     
-    // Eliminar el grupo
-    batch.delete(doc(db, 'groups', req.params.groupId));
+    // Eliminar usuario de un grupo
+    app.delete('/api/groups/:groupId/users/:userId', authenticate, async (req, res) => {
+      try {
+        // Verificar que el grupo existe
+        const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        
+        if (!groupDoc.exists()) {
+          return res.status(404).json({ message: 'Grupo no encontrado.' });
+        }
+        
+        const groupData = groupDoc.data();
+        
+        // Verificar permisos
+        const isOwner = groupData.ownerId === req.userId;
+        
+        // Verificar si es admin
+        const userDoc = await getDoc(doc(db, 'users', req.userId));
+        const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
+        
+        // El propio usuario puede salir del grupo
+        const isSelfRemoval = req.params.userId === req.userId;
+        
+        if (!isOwner && !isAdmin && !isSelfRemoval) {
+          return res.status(403).json({ message: 'No tienes permiso para eliminar usuarios de este grupo.' });
+        }
+        
+        // Verificar si el usuario está en el grupo
+        if (!groupData.user || !groupData.user.includes(req.params.userId)) {
+          return res.status(400).json({ message: 'El usuario no está en el grupo.' });
+        }
+        
+        // Eliminar el usuario del grupo
+        const updatedUsers = groupData.user.filter(id => id !== req.params.userId);
+        
+        await updateDoc(doc(db, 'groups', req.params.groupId), { 
+          user: updatedUsers
+        });
+        
+        // Obtener el grupo actualizado
+        const updatedGroupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        const updatedGroupData = updatedGroupDoc.data();
+        
+        // Obtener información de usuarios del grupo
+        let usersInfo = [];
+        if (updatedGroupData.user && updatedGroupData.user.length > 0) {
+          for (const userId of updatedGroupData.user) {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              usersInfo.push({
+                _id: userDoc.id,
+                username: userData.username,
+                email: userData.email
+              });
+            }
+          }
+        }
+        
+        res.status(200).json({
+          message: 'Usuario eliminado del grupo con éxito.',
+          group: {
+            _id: req.params.groupId,
+            ...updatedGroupData,
+            createdAt: updatedGroupData.createdAt?.toDate() || null,
+            user: usersInfo
+          }
+        });
+      } catch (error) {
+        console.error("Error al eliminar usuario del grupo:", error);
+        res.status(500).json({ message: 'Error al eliminar usuario del grupo.', error: error.message });
+      }
+    });
     
-    // Ejecutar todas las operaciones en batch
-    await batch.commit();
+    // Eliminar grupo
+    app.delete('/api/groups/:groupId', authenticate, async (req, res) => {
+      try {
+        // Verificar que el grupo existe
+        const groupDoc = await getDoc(doc(db, 'groups', req.params.groupId));
+        
+        if (!groupDoc.exists()) {
+          return res.status(404).json({ message: 'Grupo no encontrado.' });
+        }
+        
+        const groupData = groupDoc.data();
+        
+        // Verificar permisos
+        const isOwner = groupData.ownerId === req.userId;
+        
+        // Verificar si es admin
+        const userDoc = await getDoc(doc(db, 'users', req.userId));
+        const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
+        
+        if (!isOwner && !isAdmin) {
+          return res.status(403).json({ message: 'No tienes permiso para eliminar este grupo.' });
+        }
+        
+        // Eliminar todas las tareas asociadas al grupo
+        const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', req.params.groupId));
+        const tasksSnapshot = await getDocs(tasksQuery);
+        
+        const batch = writeBatch(db);
+        
+        tasksSnapshot.forEach(docTask => {
+          batch.delete(doc(db, 'tasks', docTask.id));
+        });
+        
+        // Eliminar el grupo
+        batch.delete(doc(db, 'groups', req.params.groupId));
+        
+        // Ejecutar todas las operaciones en batch
+        await batch.commit();
+        
+        res.status(200).json({ message: 'Grupo y sus tareas eliminados con éxito.' });
+      } catch (error) {
+        console.error("Error al eliminar grupo:", error);
+        res.status(500).json({ message: 'Error al eliminar el grupo.', error: error.message });
+      }
+    });
     
-    res.status(200).json({ message: 'Grupo y sus tareas eliminados con éxito.' });
-  } catch (error) {
-    console.error("Error al eliminar grupo:", error);
-    res.status(500).json({ message: 'Error al eliminar el grupo.', error: error.message });
-  }
-});
-
-// Iniciar el servidor en cualquier entorno
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-module.exports = app;
+    // Iniciar el servidor en cualquier entorno
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+    
+    module.exports = app;
